@@ -3,113 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Audit RGAA Professionnel - Interactif</title>
+    <title>Audit RGAA 4.1 - Complet & Interactif</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .sticky-sidebar { height: calc(100vh - 2rem); overflow-y: auto; }
-        details > summary { list-style: none; }
-        details > summary::-webkit-details-marker { display: none; }
+        .sidebar-scroll { height: calc(100vh - 80px); overflow-y: auto; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-50">
 
-<div id="app" class="flex flex-col min-h-screen">
-    <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-50 flex justify-between items-center">
+<div id="app" class="flex flex-col h-screen">
+    <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
         <div>
-            <h1 class="text-xl font-bold text-blue-900">Auditeur RGAA 4.1 <span class="text-sm font-normal text-slate-500 ml-2">v1.0</span></h1>
+            <h1 class="text-xl font-bold text-slate-800 tracking-tight">Logiciel d'Audit RGAA 4.1</h1>
+            <p class="text-xs text-slate-500 font-medium uppercase tracking-wider">Référentiel Général d'Amélioration de l'Accessibilité</p>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right mr-4">
-                <p class="text-xs font-bold text-slate-400 uppercase">Progression globale</p>
-                <div class="w-48 bg-slate-200 h-2 rounded-full mt-1">
-                    <div class="bg-blue-600 h-2 rounded-full transition-all" :style="{width: globalProgress + '%'}"></div>
+        <div class="flex items-center gap-6">
+            <div class="hidden md:block">
+                <div class="text-[10px] font-bold text-slate-400 uppercase mb-1 text-right">Avancement Total</div>
+                <div class="w-48 bg-slate-200 h-2 rounded-full overflow-hidden">
+                    <div class="bg-indigo-600 h-full transition-all duration-500" :style="{width: globalProgress + '%'}"></div>
                 </div>
             </div>
-            <button @click="exportJSON" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Exporter Rapport</button>
-            <button @click="resetAudit" class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
+            <button @click="exportJSON" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-lg shadow-indigo-100 transition-all">Exporter l'Audit</button>
         </div>
     </header>
 
     <div class="flex flex-1 overflow-hidden">
-        <aside class="w-80 bg-white border-r border-slate-200 p-4 sticky-sidebar hidden md:block">
+        <aside class="w-80 bg-white border-r border-slate-200 sidebar-scroll p-4">
             <nav class="space-y-1">
                 <button 
                     v-for="(theme, index) in referentiel" 
                     :key="index"
                     @click="currentThemeIndex = index"
-                    :class="['w-full text-left px-4 py-3 rounded-xl transition-all flex items-center justify-between group', 
-                             currentThemeIndex === index ? 'bg-blue-50 text-blue-700 ring-1 ring-blue-200' : 'hover:bg-slate-50']"
+                    :class="['w-full text-left px-4 py-3 rounded-xl transition-all group', 
+                             currentThemeIndex === index ? 'bg-indigo-50 border-indigo-200 border shadow-sm' : 'hover:bg-slate-50 border border-transparent']"
                 >
                     <div class="flex flex-col">
-                        <span class="text-[10px] font-bold uppercase tracking-widest opacity-60">Thème {{ index + 1 }}</span>
-                        <span class="font-semibold text-sm leading-tight">{{ theme.nom }}</span>
+                        <span :class="['text-[10px] font-bold uppercase tracking-widest', currentThemeIndex === index ? 'text-indigo-500' : 'text-slate-400']">Thématique {{ index + 1 }}</span>
+                        <span :class="['font-semibold text-sm leading-tight mt-1', currentThemeIndex === index ? 'text-indigo-900' : 'text-slate-700']">{{ theme.nom }}</span>
                     </div>
-                    <span v-if="getThemeProgress(index) === 100" class="text-green-500">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-                    </span>
                 </button>
             </nav>
         </aside>
 
-        <main class="flex-1 overflow-y-auto p-8">
-            <div class="max-w-4xl mx-auto">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-bold text-slate-800">{{ currentTheme.nom }}</h2>
-                    <p class="text-slate-500 mt-1 italic">Vérifiez les {{ currentTheme.criteres.length }} critères ci-dessous.</p>
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-8">
+            <div class="max-w-5xl mx-auto">
+                <div class="mb-10 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-3xl font-extrabold text-slate-900">{{ currentTheme.nom }}</h2>
+                        <p class="text-slate-500 mt-2">Évaluation des {{ currentTheme.criteres.length }} critères de cette thématique.</p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-lg border border-slate-200 text-sm font-bold text-slate-600">
+                        Thème {{ currentThemeIndex + 1 }} / 13
+                    </div>
                 </div>
 
-                <div class="space-y-6">
+                <div class="space-y-6 pb-20">
                     <div v-for="c in currentTheme.criteres" :key="c.id" 
-                         class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all hover:shadow-md">
+                         class="bg-white rounded-2xl border border-slate-200 shadow-sm transition-all hover:border-indigo-300 overflow-hidden">
                         
-                        <div class="p-6">
-                            <div class="flex justify-between items-start gap-4 mb-4">
-                                <div class="flex-1">
-                                    <div class="flex items-center gap-3 mb-2">
-                                        <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold italic">Critère {{ c.id }}</span>
-                                        <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-bold">Niveau {{ c.niveau }}</span>
+                        <div class="p-6 border-b border-slate-50">
+                            <div class="flex justify-between items-start gap-6">
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="bg-slate-900 text-white text-[10px] px-2 py-1 rounded font-black tracking-tighter uppercase">Critère {{ c.id }}</span>
+                                        <span class="bg-amber-100 text-amber-700 text-[10px] px-2 py-1 rounded font-bold uppercase">WCAG {{ c.niveau }}</span>
                                     </div>
-                                    <p class="text-slate-800 font-medium leading-relaxed">{{ c.intitule }}</p>
+                                    <h3 class="text-lg font-semibold text-slate-800 leading-snug">{{ c.intitule }}</h3>
                                 </div>
 
-                                <div class="flex flex-col items-end gap-2">
+                                <div class="shrink-0">
                                     <select v-model="auditData[c.id].statut" 
-                                            :class="getStatusStyle(auditData[c.id].statut)"
-                                            class="font-bold py-2 px-3 rounded-lg border-none text-sm cursor-pointer shadow-sm outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option value="NT">Non Testé</option>
-                                        <option value="C">Conforme</option>
-                                        <option value="NC">Non Conforme</option>
-                                        <option value="NA">Non Applicable</option>
+                                            :class="getStatusClass(auditData[c.id].statut)"
+                                            class="w-40 appearance-none text-center font-bold py-2.5 px-4 rounded-xl border-2 transition-all cursor-pointer focus:ring-4 focus:ring-indigo-100 outline-none">
+                                        <option value="NT">À TESTER</option>
+                                        <option value="C">CONFORME</option>
+                                        <option value="NC">NON CONFORME</option>
+                                        <option value="NA">N/A</option>
                                     </select>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Modifications à apporter</label>
-                                    <textarea v-model="auditData[c.id].modifs" rows="3" class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white transition-all outline-none" placeholder="Ex: Ajouter un attribut alt..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1">Notes / Justification dérogation</label>
-                                    <textarea v-model="auditData[c.id].notes" rows="3" class="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white transition-all outline-none" placeholder="Ex: Cas de dérogation pour charge disproportionnée..."></textarea>
-                                </div>
+                        <div class="p-6 bg-slate-50/50 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Modifications à apporter</label>
+                                <textarea v-model="auditData[c.id].modifs" class="w-full bg-white border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" rows="3" placeholder="Description des correctifs techniques..."></textarea>
                             </div>
-
-                            <div class="mt-4 pt-4 border-t border-slate-50">
-                                <details class="group">
-                                    <summary class="flex items-center text-xs font-semibold text-blue-600 cursor-pointer hover:underline">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                                        VOIR MÉTHODOLOGIE ET TESTS
-                                    </summary>
-                                    <div class="mt-3 p-4 bg-blue-50/50 rounded-xl text-sm text-slate-700 leading-relaxed border border-blue-100">
-                                        {{ c.methodologie }}
-                                    </div>
-                                </details>
+                            <div class="space-y-2">
+                                <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">Notes / Dérogations</label>
+                                <textarea v-model="auditData[c.id].notes" class="w-full bg-white border border-slate-200 rounded-xl p-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow" rows="3" placeholder="Observations ou motifs de dérogation..."></textarea>
                             </div>
                         </div>
                     </div>
@@ -126,120 +112,128 @@ createApp({
     setup() {
         const currentThemeIndex = ref(0);
         
-        // --- DONNÉES COMPLÈTES DES 13 THÉMATIQUES ---
-        const referentiel = ref([
+        // --- BASE DE DONNÉES COMPLÈTE RGAA 4.1 ---
+        const referentiel = [
             { nom: "1. Images", criteres: [
-                { id: "1.1", niveau: "A", intitule: "Chaque image porteuse d'information a-t-elle une alternative textuelle ?", methodologie: "Vérifier la présence de l'attribut alt. L'alternative doit être courte et pertinente." },
-                { id: "1.2", niveau: "A", intitule: "Chaque image de décoration est-elle correctement ignorée par les technologies d'assistance ?", methodologie: "Vérifier alt='' ou role='presentation'." }
+                { id: "1.1", niveau: "A", intitule: "Chaque image porteuse d'information a-t-elle une alternative textuelle ?" },
+                { id: "1.2", niveau: "A", intitule: "Chaque image de décoration est-elle correctement ignorée par les technologies d'assistance ?" },
+                { id: "1.3", niveau: "A", intitule: "Pour chaque image porteuse d'information ayant une alternative textuelle, cette alternative est-elle pertinente ?" },
+                { id: "1.4", niveau: "A", intitule: "Pour chaque image utilisée comme CAPTCHA ou comme image de test, une solution d'accès alternatif est-elle présente ?" },
+                { id: "1.5", niveau: "A", intitule: "Pour chaque image utilisée comme CAPTCHA, l'alternative textuelle permet-elle d'identifier la fonction et le but de l'image ?" },
+                { id: "1.6", niveau: "A", intitule: "Chaque image porteuse d'information complexe a-t-elle, si nécessaire, une description détaillée ?" },
+                { id: "1.7", niveau: "A", intitule: "Pour chaque image porteuse d'information complexe ayant une description détaillée, cette description est-elle pertinente ?" },
+                { id: "1.8", niveau: "A", intitule: "Chaque image texte porteuse d'information a-t-elle, si possible, été remplacée par du texte stylé ?" },
+                { id: "1.9", niveau: "A", intitule: "Chaque image légende est-elle, si nécessaire, correctement reliée à l'image correspondante ?" }
             ]},
             { nom: "2. Cadres", criteres: [
-                { id: "2.1", niveau: "A", intitule: "Chaque cadre a-t-il un titre de cadre ?", methodologie: "L'attribut title doit être présent sur les éléments iframe." }
+                { id: "2.1", niveau: "A", intitule: "Chaque cadre a-t-il un titre de cadre ?" },
+                { id: "2.2", niveau: "A", intitule: "Pour chaque cadre ayant un titre de cadre, ce titre de cadre est-il pertinent ?" }
             ]},
             { nom: "3. Couleurs", criteres: [
-                { id: "3.1", niveau: "A", intitule: "L'information n'est-elle pas donnée uniquement par la couleur ?", methodologie: "Vérifier qu'un symbole ou un texte complète l'usage de la couleur." },
-                { id: "3.2", niveau: "AA", intitule: "Le contraste entre la couleur du texte et la couleur de fond est-il suffisant ?", methodologie: "Ratio attendu : 4.5:1 pour le texte normal." }
+                { id: "3.1", niveau: "A", intitule: "Dans chaque page web, l'information ne doit pas être donnée par la couleur uniquement. Cette règle est-elle respectée ?" },
+                { id: "3.2", niveau: "AA", intitule: "Dans chaque page web, le contraste entre la couleur du texte et la couleur de son arrière-plan est-il suffisamment élevé (hors cas particuliers) ?" },
+                { id: "3.3", niveau: "AA", intitule: "Dans chaque page web, les couleurs utilisées dans les composants d'interface ou les éléments graphiques porteurs d'informations ont-elles un contraste suffisant (hors cas particuliers) ?" }
             ]},
             { nom: "4. Multimédia", criteres: [
-                { id: "4.1", niveau: "A", intitule: "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une transcription ou une audiodescription ?", methodologie: "Vérifier la présence d'un lien vers la transcription textuelle." }
+                { id: "4.1", niveau: "A", intitule: "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une transcription textuelle ou une audiodescription (hors cas particuliers) ?" },
+                { id: "4.2", niveau: "A", intitule: "Chaque média temporel pré-enregistré a-t-il, si nécessaire, des sous-titres synchronisés (hors cas particuliers) ?" },
+                { id: "4.3", niveau: "AA", intitule: "Chaque média temporel pré-enregistré a-t-il, si nécessaire, une audiodescription synchronisée (hors cas particuliers) ?" },
+                { id: "4.4", niveau: "A", intitule: "Chaque média temporel a-t-il, si nécessaire, une alternative pertinente (hors cas particuliers) ?" },
+                { id: "4.5", niveau: "A", intitule: "Chaque média temporel est-il identifiable (hors cas particuliers) ?" },
+                { id: "4.7", niveau: "A", intitule: "Chaque média temporel est-il contrôlable par le clavier et tout dispositif de pointage ?" }
             ]},
             { nom: "5. Tableaux", criteres: [
-                { id: "5.1", niveau: "A", intitule: "Chaque tableau de données a-t-il un résumé ?", methodologie: "Vérifier la balise caption." }
+                { id: "5.1", niveau: "A", intitule: "Chaque tableau de données complexe a-t-il un résumé ?" },
+                { id: "5.2", niveau: "A", intitule: "Pour chaque tableau de données complexe ayant un résumé, celui-ci est-il pertinent ?" },
+                { id: "5.3", niveau: "A", intitule: "Pour chaque tableau de données, la structure est-elle correctement restituée (en-têtes et cellules reliés) ?" }
             ]},
             { nom: "6. Liens", criteres: [
-                { id: "6.1", niveau: "A", intitule: "Chaque lien est-il explicite ?", methodologie: "L'intitulé du lien doit permettre de comprendre sa destination hors contexte." }
+                { id: "6.1", niveau: "A", intitule: "Chaque lien est-il explicite (hors cas particuliers) ?" },
+                { id: "6.2", niveau: "A", intitule: "Dans chaque page web, chaque lien a-t-il un intitulé ?" }
             ]},
             { nom: "7. Scripts", criteres: [
-                { id: "7.1", niveau: "A", intitule: "Chaque script est-il, si nécessaire, compatible avec les technologies d'assistance ?", methodologie: "Vérifier l'accessibilité au clavier et les rôles ARIA." }
+                { id: "7.1", niveau: "A", intitule: "Chaque script est-il, si nécessaire, compatible avec les technologies d'assistance ?" },
+                { id: "7.2", niveau: "A", intitule: "Chaque script est-il contrôlable par le clavier et par tout dispositif de pointage (hors cas particuliers) ?" },
+                { id: "7.3", niveau: "A", intitule: "Chaque script est-il, si nécessaire, accompagné d'une alternative ?" }
             ]},
             { nom: "8. Éléments obligatoires", criteres: [
-                { id: "8.1", niveau: "A", intitule: "Chaque page web a-t-elle un titre de page ?", methodologie: "Vérifier la balise <title>." },
-                { id: "8.2", niveau: "A", intitule: "Pour chaque page web, la langue par défaut est-elle présente ?", methodologie: "Vérifier l'attribut lang sur la balise html." }
+                { id: "8.1", niveau: "A", intitule: "Chaque page web a-t-elle un titre de page ?" },
+                { id: "8.2", niveau: "A", intitule: "Pour chaque page web, le changement de langue par défaut est-il indiqué ?" },
+                { id: "8.3", niveau: "A", intitule: "Pour chaque page web, la langue par défaut est-elle présente ?" },
+                { id: "8.7", niveau: "A", intitule: "Dans chaque page web, le code source est-il valide selon le type de document spécifié ?" }
             ]},
-            { nom: "9. Structuration", criteres: [
-                { id: "9.1", niveau: "A", intitule: "L'information est-elle structurée par l'utilisation appropriée de titres ?", methodologie: "Vérifier la hiérarchie h1 à h6." }
+            { nom: "9. Structuration de l'information", criteres: [
+                { id: "9.1", niveau: "A", intitule: "Dans chaque page web, l'information est-elle structurée par l'utilisation appropriée de titres ?" },
+                { id: "9.2", niveau: "A", intitule: "Dans chaque page web, la structure du document est-elle cohérente (zones de navigation, contenu principal, etc.) ?" },
+                { id: "9.3", niveau: "A", intitule: "Dans chaque page web, chaque liste est-elle correctement structurée ?" }
             ]},
-            { nom: "10. Présentation", criteres: [
-                { id: "10.1", niveau: "A", intitule: "Des feuilles de style sont-elles utilisées pour contrôler la présentation ?", methodologie: "Vérifier que le contenu reste lisible si les CSS sont désactivés." }
+            { nom: "10. Présentation de l'information", criteres: [
+                { id: "10.1", niveau: "A", intitule: "Dans chaque page web, des feuilles de style sont-elles utilisées pour contrôler la présentation de l'information ?" },
+                { id: "10.2", niveau: "A", intitule: "Dans chaque page web, le contenu reste-t-il lisible lorsque les feuilles de style sont désactivées ?" },
+                { id: "10.3", niveau: "A", intitule: "Dans chaque page web, l'information reste-t-elle compréhensible lorsque les feuilles de style sont désactivées ?" }
             ]},
             { nom: "11. Formulaires", criteres: [
-                { id: "11.1", niveau: "A", intitule: "Chaque champ de formulaire a-t-il une étiquette ?", methodologie: "Vérifier la balise <label> associée via l'attribut for." }
+                { id: "11.1", niveau: "A", intitule: "Chaque champ de formulaire a-t-il une étiquette ?" },
+                { id: "11.2", niveau: "A", intitule: "Pour chaque formulaire, chaque étiquette associée à un champ de formulaire est-elle pertinente ?" },
+                { id: "11.5", niveau: "A", intitule: "Dans chaque formulaire, les champs de même nature sont-ils regroupés, si nécessaire ?" }
             ]},
             { nom: "12. Navigation", criteres: [
-                { id: "12.1", niveau: "A", intitule: "Chaque page contient-elle au moins deux systèmes de navigation ?", methodologie: "Ex: Menu de navigation + Plan du site ou Moteur de recherche." }
+                { id: "12.1", niveau: "A", intitule: "Chaque page web contient-elle au moins deux systèmes de navigation différents (hors cas particuliers) ?" },
+                { id: "12.6", niveau: "A", intitule: "Dans chaque page web, les liens d'évitement ou d'accès rapide au contenu principal sont-ils présents ?" },
+                { id: "12.7", niveau: "A", intitule: "Dans chaque page web, l'ordre de tabulation est-il cohérent ?" }
             ]},
             { nom: "13. Consultation", criteres: [
-                { id: "13.1", niveau: "A", intitule: "L'utilisateur a-t-il le contrôle des limites de temps ?", methodologie: "Vérifier si les sessions peuvent être prolongées." }
+                { id: "13.1", niveau: "A", intitule: "Pour chaque page web, l'utilisateur a-t-il le contrôle des limites de temps ?" },
+                { id: "13.3", niveau: "A", intitule: "Dans chaque page web, chaque document en téléchargement possède-t-il, si nécessaire, une version accessible ?" }
             ]}
-        ]);
+        ];
 
         const auditData = ref({});
         
-        // Initialisation de l'objet d'audit
-        const initData = () => {
-            referentiel.value.forEach(theme => {
+        const initAudit = () => {
+            referentiel.forEach(theme => {
                 theme.criteres.forEach(c => {
                     auditData.value[c.id] = { statut: 'NT', modifs: '', notes: '' };
                 });
             });
         };
 
-        const currentTheme = computed(() => referentiel.value[currentThemeIndex.ref === undefined ? currentThemeIndex.value : currentThemeIndex]);
+        const currentTheme = computed(() => referentiel[currentThemeIndex.value]);
 
-        const getStatusStyle = (status) => {
-            if (status === 'C') return 'bg-green-500 text-white';
-            if (status === 'NC') return 'bg-red-500 text-white';
-            if (status === 'NA') return 'bg-slate-400 text-white';
-            return 'bg-white border-2 border-slate-200 text-slate-500';
-        };
-
-        const getThemeProgress = (idx) => {
-            const criteres = referentiel.value[idx].criteres;
-            const completed = criteres.filter(c => auditData.value[c.id].statut !== 'NT').length;
-            return Math.round((completed / criteres.length) * 100);
+        const getStatusClass = (statut) => {
+            if (statut === 'C') return 'bg-emerald-50 border-emerald-500 text-emerald-700';
+            if (statut === 'NC') return 'bg-rose-50 border-rose-500 text-rose-700';
+            if (statut === 'NA') return 'bg-slate-100 border-slate-400 text-slate-600';
+            return 'bg-white border-slate-200 text-slate-400';
         };
 
         const globalProgress = computed(() => {
-            const total = Object.keys(auditData.value).length;
-            const done = Object.values(auditData.value).filter(v => v.statut !== 'NT').length;
-            return total ? Math.round((done / total) * 100) : 0;
+            const keys = Object.keys(auditData.value);
+            if (keys.length === 0) return 0;
+            const done = keys.filter(k => auditData.value[k].statut !== 'NT').length;
+            return Math.round((done / keys.length) * 100);
         });
 
         const exportJSON = () => {
-            const data = {
-                date: new Date().toISOString(),
-                score: globalProgress.value,
-                details: auditData.value
-            };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(auditData.value, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `audit-rgaa-${new Date().toLocaleDateString()}.json`;
-            a.click();
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `audit_rgaa_${new Date().toISOString().slice(0,10)}.json`;
+            link.click();
         };
 
-        const resetAudit = () => {
-            if(confirm("Voulez-vous vraiment effacer tout l'audit ?")) {
-                initData();
-                localStorage.removeItem('rgaa_save');
-            }
-        };
-
-        // Sauvegarde auto
         watch(auditData, (newVal) => {
-            localStorage.setItem('rgaa_save', JSON.stringify(newVal));
+            localStorage.setItem('rgaa_session_v1', JSON.stringify(newVal));
         }, { deep: true });
 
         onMounted(() => {
-            initData();
-            const saved = localStorage.getItem('rgaa_save');
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                Object.assign(auditData.value, parsed);
-            }
+            initAudit();
+            const saved = localStorage.getItem('rgaa_session_v1');
+            if (saved) Object.assign(auditData.value, JSON.parse(saved));
         });
 
-        return { referentiel, currentThemeIndex, currentTheme, auditData, getStatusStyle, getThemeProgress, globalProgress, exportJSON, resetAudit };
+        return { referentiel, currentThemeIndex, currentTheme, auditData, getStatusClass, globalProgress, exportJSON };
     }
 }).mount('#app');
 </script>
