@@ -1,170 +1,156 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audit RGAA Expert</title>
-<style>
-body { font-family: Arial; margin:0; background:#f4f6f8; }
-header { background:#0b1f3a; color:#fff; padding:15px; display:flex; justify-content:space-between; }
-.container { display:flex; }
-.sidebar { width:260px; background:#111; color:#fff; padding:15px; height:100vh; overflow:auto; }
-.sidebar button { width:100%; margin-bottom:6px; padding:8px; border:none; background:#222; color:#fff; cursor:pointer; }
-.main { flex:1; padding:20px; }
-.card { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; box-shadow:0 4px 8px rgba(0,0,0,0.05); }
-input, select, textarea { width:100%; padding:8px; margin-top:5px; margin-bottom:10px; }
-button.primary { background:#0A66C2; color:#fff; border:none; padding:10px; border-radius:5px; cursor:pointer; }
-.badge { padding:3px 8px; border-radius:4px; font-size:12px; }
-.ok { background:#d4edda; }
-.ko { background:#f8d7da; }
-.na { background:#e2e3e5; }
-.score { font-size:18px; }
-@media print {
-.sidebar, button { display:none; }
-body { background:#fff; }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA Stage Tracker - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
 </head>
-<body>
-<header>
-<h2>Audit RGAA Expert</h2>
-<div class="score">Score : <span id="score">0%</span></div>
-</header>
+<body class="bg-slate-50 text-slate-900">
 
-<div class="container">
-<div class="sidebar" id="themes"></div>
+<div id="app" class="max-w-6xl mx-auto px-4 py-8">
+    <header class="mb-10 flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-extrabold text-indigo-600 tracking-tight">Objectif Stage QA 🎯</h1>
+            <p class="text-slate-500">Gère tes candidatures et tes relances efficacement.</p>
+        </div>
+        <div class="flex gap-3">
+            <span class="bg-white border px-4 py-2 rounded-lg shadow-sm text-sm font-semibold">
+                📊 {{ applications.length }} Candidatures
+            </span>
+        </div>
+    </header>
 
-<div class="main">
-<div class="card">
-<label>URL auditée</label>
-<input type="text" id="url" placeholder="https://...">
-<button class="primary" onclick="initAudit()">Démarrer audit</button>
-<button onclick="exportJSON()">Export JSON</button>
-<button onclick="window.print()">Export PDF</button>
-</div>
-<div id="results"></div>
-</div>
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <aside class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    🔎 Où chercher en France ?
+                </h2>
+                <div class="grid grid-cols-1 gap-2">
+                    <a v-for="site in jobBoards" :href="site.url" target="_blank" 
+                       class="flex items-center justify-between p-3 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-200 group">
+                        <span class="font-medium">{{ site.name }}</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-indigo-600 p-6 rounded-2xl shadow-lg text-white">
+                <h2 class="text-lg font-bold mb-4">Nouvelle Candidature</h2>
+                <div class="space-y-3 text-slate-900">
+                    <input v-model="newApp.company" placeholder="Entreprise" class="w-full p-3 rounded-xl text-sm outline-none">
+                    <input v-model="newApp.contact" placeholder="Nom du recruteur / Mail" class="w-full p-3 rounded-xl text-sm outline-none">
+                    <input v-model="newApp.url" placeholder="URL de l'annonce" class="w-full p-3 rounded-xl text-sm outline-none">
+                    <button @click="addApplication" class="w-full bg-white text-indigo-600 font-bold py-3 rounded-xl hover:bg-indigo-50 transition-colors">
+                        Ajouter au suivi
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-2 space-y-4">
+            <h2 class="text-xl font-bold px-2 italic">Mon Pipeline QA</h2>
+            
+            <div v-if="applications.length === 0" class="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
+                <p class="text-slate-400 font-medium">Aucune candidature enregistrée pour le moment.</p>
+            </div>
+
+            <div v-for="(app, index) in applications" :key="index" 
+                 class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-800">{{ app.company }}</h3>
+                        <p class="text-sm text-indigo-600 font-medium">{{ app.contact }}</p>
+                    </div>
+                    <select v-model="app.status" :class="statusColor(app.status)" class="text-xs font-bold px-3 py-1 rounded-full border-none outline-none cursor-pointer">
+                        <option value="Envoyé">ENVOYÉ</option>
+                        <option value="Entretien">ENTRETIEN</option>
+                        <option value="Relancé">RELANCÉ</option>
+                        <option value="Refusé">REFUSÉ</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-xs mb-4">
+                    <div class="bg-slate-50 p-3 rounded-xl">
+                        <span class="block text-slate-400 font-bold uppercase mb-1">Dernière action</span>
+                        <span class="font-semibold">{{ app.date }}</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl">
+                        <span class="block text-slate-400 font-bold uppercase mb-1">Lien Annonce</span>
+                        <a :href="app.url" target="_blank" class="text-indigo-500 truncate block hover:underline">Voir l'offre</a>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" v-model="app.remind" class="w-4 h-4 text-indigo-600 rounded">
+                        <label class="text-sm font-semibold text-slate-600">Penser à relancer J+7</label>
+                    </div>
+                    <button @click="removeApp(index)" class="text-red-400 hover:text-red-600 text-sm font-medium">Supprimer</button>
+                </div>
+            </div>
+        </main>
+    </div>
 </div>
 
 <script>
-// RGAA STRUCTURE (extrait étendu simulant référentiel complet)
-const data = [];
+const { createApp, ref, watch, onMounted } = Vue;
 
-const themesList = [
-"Images","Cadres","Couleurs","Multimédia","Tableaux","Liens","Scripts","Navigation","Présentation","Formulaires","Structure","Accessibilité"
-];
+createApp({
+    setup() {
+        const applications = ref([]);
+        const newApp = ref({ company: '', contact: '', url: '', status: 'Envoyé', remind: false });
 
-let idCounter = 1;
-themesList.forEach(theme=>{
- for(let i=1;i<=8;i++){
-  data.push({
-    id: idCounter++,
-    theme,
-    wcag: i%3===0?"AA":"A",
-    desc: `Critère ${i} - ${theme}`
-  });
- }
-});
+        const jobBoards = [
+            { name: "Welcome to the Jungle", url: "https://www.welcometothejungle.com/fr/jobs?query=QA+Testeur+Stage" },
+            { name: "Indeed France", url: "https://fr.indeed.com/jobs?q=stage+qa+testeur" },
+            { name: "LinkedIn", url: "https://www.linkedin.com/jobs/search/?keywords=Stage%20QA" },
+            { name: "HelloWork", url: "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Stage+QA" },
+            { name: "Meteojob", url: "https://www.meteojob.com/offres-emploi/stage-qa-testeur" }
+        ];
 
-let audit = {};
+        const addApplication = () => {
+            if (newApp.value.company) {
+                applications.value.unshift({
+                    ...newApp.value,
+                    date: new Date().toLocaleDateString('fr-FR')
+                });
+                newApp.value = { company: '', contact: '', url: '', status: 'Envoyé', remind: false };
+            }
+        };
 
-function initAudit(){
- document.getElementById('results').innerHTML='';
- audit = {};
- renderThemes();
- renderCriteria();
-}
+        const removeApp = (index) => {
+            applications.value.splice(index, 1);
+        };
 
-function renderThemes(){
- const sidebar = document.getElementById('themes');
- sidebar.innerHTML = '<h3>Thématiques</h3>';
- [...new Set(data.map(d=>d.theme))].forEach(t=>{
-   const btn = document.createElement('button');
-   btn.innerText = t;
-   btn.onclick = ()=>renderCriteria(t);
-   sidebar.appendChild(btn);
- });
-}
+        const statusColor = (status) => {
+            if (status === 'Envoyé') return 'bg-blue-100 text-blue-700';
+            if (status === 'Entretien') return 'bg-amber-100 text-amber-700';
+            if (status === 'Relancé') return 'bg-purple-100 text-purple-700';
+            if (status === 'Refusé') return 'bg-red-100 text-red-700';
+            return 'bg-slate-100 text-slate-700';
+        };
 
-function renderCriteria(filter=null){
- const container = document.getElementById('results');
- container.innerHTML='';
- data.filter(d=>!filter||d.theme===filter).forEach(c=>{
-  const card = document.createElement('div');
-  card.className='card';
+        // Sauvegarde locale pour ne pas perdre tes données
+        watch(applications, (newVal) => {
+            localStorage.setItem('qa_stage_tracker', JSON.stringify(newVal));
+        }, { deep: true });
 
-  card.innerHTML=`
-   <h3>${c.id} - ${c.theme} (${c.wcag})</h3>
-   <p>${c.desc}</p>
+        onMounted(() => {
+            const saved = localStorage.getItem('qa_stage_tracker');
+            if (saved) applications.value = JSON.parse(saved);
+        });
 
-   <label>Statut</label>
-   <select onchange="update('${c.id}', this)">
-     <option value="">--</option>
-     <option value="ok">Conforme</option>
-     <option value="ko">Non conforme</option>
-     <option value="na">NA</option>
-   </select>
-   <span class="badge"></span>
-
-   <label>Recommandation</label>
-   <textarea onchange="save('${c.id}','rec',this.value)"></textarea>
-
-   <label>Dérogation</label>
-   <textarea onchange="save('${c.id}','der',this.value)"></textarea>
-
-   <label>Correction</label>
-   <textarea onchange="save('${c.id}','fix',this.value)"></textarea>
-
-   <label>Méthodologie</label>
-   <textarea onchange="save('${c.id}','meth',this.value)"></textarea>
-  `;
-
-  container.appendChild(card);
- });
-}
-
-function update(id,select){
- const badge = select.parentElement.querySelector('.badge');
- badge.className='badge '+select.value;
- badge.innerText=select.value;
- audit[id] = audit[id]||{};
- audit[id].status = select.value;
- computeScore();
- saveLocal();
-}
-
-function save(id,key,value){
- audit[id]=audit[id]||{};
- audit[id][key]=value;
- saveLocal();
-}
-
-function computeScore(){
- const vals = Object.values(audit).map(a=>a.status);
- const ok = vals.filter(v=>v==='ok').length;
- const total = vals.length||1;
- document.getElementById('score').innerText = Math.round((ok/total)*100)+'%';
-}
-
-function exportJSON(){
- const blob = new Blob([JSON.stringify(audit,null,2)],{type:'application/json'});
- const a = document.createElement('a');
- a.href = URL.createObjectURL(blob);
- a.download = 'audit-rgaa.json';
- a.click();
-}
-
-function saveLocal(){
- localStorage.setItem('auditRGAA', JSON.stringify(audit));
-}
-
-function loadLocal(){
- const saved = localStorage.getItem('auditRGAA');
- if(saved) audit = JSON.parse(saved);
-}
-
-loadLocal();
+        return { applications, newApp, jobBoards, addApplication, removeApp, statusColor };
+    }
+}).mount('#app');
 </script>
-
 </body>
 </html>
